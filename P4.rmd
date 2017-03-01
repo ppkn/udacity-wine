@@ -1,0 +1,290 @@
+Exploration of Red Wine Data by Daniel Pipkin
+========================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load all of the packages that you end up using
+# in your analysis in this code chunk.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk.
+# This prevents the code from displaying in the knitted HTML output.
+# You should set echo=FALSE for all code chunks in your file.
+
+library(ggplot2)
+library(gridExtra)
+library(GGally)
+library(RColorBrewer)
+```
+
+```{r Load_the_Data}
+# Load the Data
+redwine <- read.csv('wineQualityReds.csv')
+
+# X is an unneeded variable
+rw <- subset(redwine, select = -X)
+```
+
+# Univariate Plots Section
+```{r echo=FALSE, Univariate_Plots}
+head(rw)
+```
+```{r echo=FALSE}
+summary(rw)
+```
+
+Eleven of these attributes are physiochemical properties of the wine. They may or may not contribute to the quality, which is scored from 0 to 10.
+
+```{r echo=FALSE}
+ggplot(rw, aes(quality)) +
+  geom_histogram(binwidth = 1)
+```
+
+The scores of these wines only range from 3 to 8. We don't have any data for exceptionally good or bad wines.
+
+```{r echo=FALSE, message=FALSE}
+ggplot(rw, aes(residual.sugar)) +
+  geom_histogram()
+```
+```{r echo=FALSE, warning=FALSE}
+ggplot(rw, aes(residual.sugar)) +
+  geom_histogram(binwidth = 0.1) +
+  xlim(0, quantile(rw$residual.sugar, 0.95)) +
+  xlab("residual.sugar (Bottom 95%)")
+```
+
+This is how much sugar is left after fermentation stops. It has a nice long tail out to those extreme values but when we just look at the botom 95%, most hover around 2 g/L.
+
+```{r echo=FALSE}
+ggplot(rw, aes(alcohol)) +
+  geom_histogram(binwidth = 0.1) +
+  geom_vline(xintercept = median(rw$alcohol), color = 'royalblue') +
+  geom_vline(xintercept = mean(rw$alcohol), color = 'coral')
+```
+
+Here we have another long tail distribution for alcohol percentage by volume. Most of the wines contain about 9.5% alc. The median is <span style="color:royalblue">10.2</span>% and the average is <span style="color:coral">10.42</span>%.
+
+```{r echo=FALSE}
+p1 <- qplot(rw$fixed.acidity)
+p2 <- qplot(rw$volatile.acidity)
+p3 <- qplot(rw$citric.acid)
+p4 <- qplot(rw$chlorides)
+p5 <- qplot(rw$free.sulfur.dioxide)
+p6 <- qplot(rw$total.sulfur.dioxide)
+p7 <- qplot(rw$density)
+p8 <- qplot(rw$pH)
+p9 <- qplot(rw$sulphates)
+
+grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, ncol = 3)
+```
+
+All of these variables seem to be more or less normally distributed, some have long tails, but one seems to stick out. Let's take a closer look at citric acid with a different bin width.
+
+```{r echo=FALSE}
+qplot(rw$citric.acid, binwidth = 0.01)
+```
+
+It looks like most of the wines have 0 g/L of citric acid. There are also spikes at 0.02, 0.24, and 0.49.
+
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+There 1599 observations in this dataset, each one having 12 attributes. Most variables have long-tail distributions. Some, like measures of acidity and density, are well behaved normal distributions.  
+
+There are some sweeter wines, with about 80 observations have more than 5 g/L. It's good to bear in mind that wines are only considered sweet at about 45 g/L and the highest value we observed is `r max(rw$residual.sugar)`. So there really isn't any "sweet" wine in our dataset.
+
+### What is/are the main feature(s) of interest in your dataset?
+I'm most interested in the quality variable and how the others affect it. The quality is between 0-10, but we only have observations with a max of 8 and min of 3. The average quality is `r mean(rw$quality)`.
+
+### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+I won't be sure until after I look at some bivariate plots but I think that volitile acidity, citric acid, residual sugar, and chlorides will be the best predictors. All of those seem to do with taste.
+
+### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+
+
+# Bivariate Plots Section
+```{r echo=FALSE}
+round(cor(rw), 3)
+```
+
+There are a lot of things to look at, so let's try to pare them down before we do a scatterplot matrix. At the risk of losing some of the detail, let's look at critric acid as a stand in for fixed acidity, volitile acidity, and pH. We'll also do the same using sulphates for free sulfur dioxide and total sulfur dioxide.
+
+```{r echo=FALSE}
+smaller_rw <- subset(rw,
+                     select = -c(fixed.acidity, volatile.acidity,
+                                 pH, free.sulfur.dioxide, total.sulfur.dioxide))
+ggpairs(smaller_rw)
+```
+
+Chlorides seem to be relatively correlated to many other variables. Citric acid, density, sulphates, and alcohol all have a correlation coeffienct above 0.2 with chlorides.  
+With my primary interest being in quality, let's take a look at the more correlated items like alcohol, sulphates, and citric acid.
+
+```{r echo=FALSE}
+ggplot(rw, aes(x = alcohol, y = quality)) +
+  geom_point()
+```
+
+That's hard to see because a lot of points are likely on top of each other. Let's add a little bit of jitter and a trendline.
+
+```{r echo=FALSE}
+ggplot(rw, aes(x = alcohol, y = quality)) +
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = "lm")
+```
+
+There does appear to be an overall "up and to the right" shape of the points, but there are a lot of observations around 9.5% alcohol that might be affecting the correlation.
+
+```{r echo=FALSE}
+ggplot(rw, aes(x = alcohol, y = density)) +
+  geom_point(alpha = 0.25) +
+  geom_smooth(method = "lm")
+```
+
+This seems to have a stronger relationship than alcohol and quality, even though the correlation coeffients aren't all that different.
+
+```{r echo=FALSE}
+ggplot(rw, aes(x = residual.sugar, y = quality)) +
+  geom_jitter(alpha = 0.15)
+```
+
+There is really no relationship here. Most wines only had about 2 g/L of sugar, and the higher sugar values are distibuted among the qualities as expected. Sugar levels of above, say, 12 g/L, would be expected to score around a 5 or 6 just because that's what most wines scored regardless of sugar level.
+
+```{r echo=FALSE}
+ggplot(rw, aes(x = volatile.acidity, y = quality)) +
+  geom_jitter(alpha = 0.25) +
+  geom_smooth(method = 'lm')
+```
+
+Here we have volitile acidity and quality, which are negatively correlated with a coeffiecient of `r round(cor(rw$quality, rw$volatile.acidity), 3)`. That means that only about `r round(cor(rw$quality, rw$volatile.acidity)^2, 3) * 100`% of the change in quality can be attributed to volatile acidity.
+
+```{r echo=FALSE}
+ggplot(rw, aes(x = fixed.acidity, y = pH)) +
+  geom_point(alpha = 0.25) +
+  geom_smooth(method = 'lm')
+```
+
+Here it is important to remember that the lower pH values mean more acidic. That is a mighty fine trend right there, although one would probably guess that the more fixed acidity there is, the more acidic the wine is.
+
+# Bivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
+I was surprised to find that sugar didn't have much to do with the quality of the wine. I guess my affinity to sweet things would make me a poor sommelier.
+I also found it interesting that higher alcohol content had a higher probability of getting a good quality score.
+
+### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+I noticed that density and alcohol had a stronger negative correlation than others. I think it's important to pay attention to these things when creating a predictive model. Adding features to the model that have similar effects probably just overcomplicates the model.
+
+### What was the strongest relationship you found?
+The strongest relationship was easy to guess. pH and fixed acidity were correlated and I'm sure that adding volatile acidity and citric acid in there would have explained a lot of the variation in pH.
+
+
+
+# Multivariate Plots Section
+
+```{r echo=FALSE, Multivariate_Plots}
+ggplot(rw, aes(x = alcohol, y = quality, color = volatile.acidity)) +
+  geom_jitter() +
+  scale_color_gradient(high = 'red', low = 'blue')
+```
+
+```{r echo=FALSE}
+ggplot(rw, aes(x = alcohol, y = quality, color = citric.acid)) +
+  geom_jitter() +
+  scale_color_gradient(high = 'red', low = 'blue')
+```
+
+```{r echo=FALSE}
+ggplot(rw, aes(x = alcohol, y = volatile.acidity, color = factor(quality))) +
+  geom_jitter() +
+  scale_color_brewer()
+```
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
+
+The only relationship that really saw was with that last plot. You can tell that as the alcohol increases and the volitile acidity decreases, the quality increases. This was already expected from the bivariate plotting section though.
+
+### Were there any interesting or surprising interactions between features?
+
+No
+
+------
+
+# Final Plots and Summary
+
+### Plot One
+```{r echo=FALSE, Plot_One}
+ggplot(rw, aes(alcohol)) +
+  geom_histogram(binwidth = 0.1) +
+  geom_vline(xintercept = median(rw$alcohol), color = 'royalblue') +
+  annotate('text',
+           x = median(rw$alcohol) - 0.35,
+           y = 120,
+           label = paste('median\n(', median(rw$alcohol), ')', sep = ''),
+           color = 'royalblue') +
+  geom_vline(xintercept = mean(rw$alcohol), color = 'coral') +
+  annotate('text',
+           x = mean(rw$alcohol) + 0.35,
+           y = 120,
+           label = paste('mean\n(', round(mean(rw$alcohol), 2), ')', sep = ''),
+           color = 'coral') +
+  ggtitle("Distribution of Alcohol Percentages") +
+  xlab("Alcohol content (%)") +
+  ylab("Number of wines")
+```
+
+### Description One
+
+Here we have a right-skewed distribution of alcohol content of observed wines. You can tell that it's *right* skewed because the <span style="color:coral">mean</span> has been pulled up to the *right* of the <span style="color:royalblue">median</span>.
+
+We don't have many observations over 12% alcohol. It is good to keep things like this in mind when we are looking at alcohol's relationship to quality in our dataset.
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+ggplot(rw, aes(x = alcohol, y = quality)) +
+  geom_jitter(alpha = 0.1, height = 0.48, width = 0.025) +
+  geom_smooth(method = "lm") +
+  ggtitle("Quality vs Alcohol Content") +
+  xlab("Alcohol (%)") +
+  ylab("Quality (0-10)")
+```
+
+### Description Two
+You can see that as the alcohol content increases, so does the quality of the wine. It would be useful to have more observations of higher alcohol content to help confirm this though. The points on the plot have been spread around a little bit to make it easier to visualize the relationship on a scatterplot.
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+ggplot(rw, aes(x = alcohol, y = volatile.acidity, color = factor(quality))) +
+  geom_jitter() +
+  scale_color_brewer(name = "Quality") +
+  ggtitle("Quality by Volitile Acidity and Alcohol") +
+  xlab("Alcohol (%)") +
+  ylab("Volitile Acidity (g/L)")
+```
+
+### Description Three
+This chart shows how quality improves as the alcohol content increases and the volitile acidity decreases. There is an overall trend of the colors getting darker as they go to the bottom right.
+
+------
+
+# Reflection
+
+This dataset has 11 physiochemical properties of 1599 red wines. I read up on information about each property so I understood overall implications as I looked at the dataset further. After looking at the distributions of some variables, I looked at the relationship between two- and, eventually, three-variable combinations.
+
+The most unexpected distribution I saw was citric acid. It had the largest spike around 0 and kind of tapered off, but spiked up around 0.24 and 0.49 g/L. Looking at the dataset information, I wasn't able to find a good reason for this distribution. It might have something to do with the kind of red wine they used. It could be interesting to look into it further.
+
+I used a correlation matrix and a scatterplot matrix to decide what relationships I wanted to investigate between variables. The strongest relationship I found was between tartaric acid (fixed acidity) and pH. About 47% of the variation in pH could be explained by tartaric acid content. It would be a useful exercise to add acetic acid (volitile acidity) and citric acid to a model and see how much of the pH can be attributed to those three.
+
+The multivariate analysis section was the hardest for me. I wasn't sure what variables might strengthen each other to predict quality. I think the best I was able to find was a pair of variables that didn't work against each other. Volitile acidity and alcohol were the two attributes with the highest correlations and when they work together, there is a clear trend in the quality.
+
+Like most first dives into data, this exploration posed more questions than it answered. That's great! Curiosity keeps us young. Three avenues to explore stuck out to me:
+
+1. What causes those spikes in the citric acid dataset?  
+2. If the three measured acids don't explain all of the variation in pH, what other acids might be in the wines?  
+3. What combination of variables would make a good predictive model?
+
+The first two would be best answered by controlled experiment or gathering more data. The last one can be explored just by spending more time playing with the data, making more models and seeing how the attributes work together to make good quality wine.
+
+There will be limitations in the models, though. Predicting values that we have no measurements for (e.g. 20 g/L of residual sugar) is risky, and most models would have predictions of negative quality values. Gathering more diverse data would assist in modelling somewhat.
+
+I'm interested to see what else goes into a good quality wine.
