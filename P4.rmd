@@ -84,6 +84,17 @@ qplot(rw$citric.acid, binwidth = 0.01)
 
 It looks like most of the wines have 0 g/L of citric acid. There are also spikes at 0.02, 0.24, and 0.49.
 
+Also, above the observations of density seem to be normally distributed. Let's take a look.
+```{r echo=FALSE}
+ggplot(rw, aes(x=density)) +
+  geom_density() +
+  stat_function(linetype = 'dashed',
+                color = 'royalblue',
+                fun = dnorm,
+                args = list(mean = mean(rw$density), sd = sd(rw$density)))
+```
+
+Here we can tell that it is pretty close, only with less variation near the center.
 
 # Univariate Analysis
 
