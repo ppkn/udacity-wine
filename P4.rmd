@@ -34,11 +34,10 @@ rw <- subset(redwine, select = -X)
 ```
 
 # Univariate Plots Section
+Let's look at the first couple of rows of data, just to see what the values look like.
+
 ```{r Univariate_Plots}
 head(rw)
-```
-```{r}
-summary(rw)
 ```
 
 Eleven of these attributes are physiochemical properties of the wine. They may or may not contribute to the quality, which is scored from 0 to 10.
@@ -46,6 +45,8 @@ Eleven of these attributes are physiochemical properties of the wine. They may o
 ```{r}
 ggplot(rw, aes(quality)) +
   geom_histogram(binwidth = 1)
+
+summary(rw$quality)
 ```
 
 The scores of these wines only range from 3 to 8. We don't have any data for exceptionally good or bad wines.
@@ -53,21 +54,28 @@ The scores of these wines only range from 3 to 8. We don't have any data for exc
 ```{r}
 ggplot(rw, aes(residual.sugar)) +
   geom_histogram()
+summary(rw$residual.sugar)
 ```
+
+Woah! That's kind of skewed. Here's just the bottom 95%.
+
 ```{r echo=FALSE, warning=FALSE}
 ggplot(rw, aes(residual.sugar)) +
   geom_histogram(binwidth = 0.1) +
   xlim(0, quantile(rw$residual.sugar, 0.95)) +
   xlab("residual.sugar (Bottom 95%)")
+summary(subset(rw$residual.sugar,
+               rw$residual.sugar < quantile(rw$residual.sugar, 0.95)))
 ```
 
-This is how much sugar is left after fermentation stops. It has a nice long tail out to those extreme values but when we just look at the botom 95%, most hover around 2 g/L.
+This is how much sugar is left after fermentation stops. That nice long tail is gone and we can see that most values hover around 2 g/L.
 
 ```{r}
 ggplot(rw, aes(alcohol)) +
   geom_histogram(binwidth = 0.1) +
   geom_vline(xintercept = median(rw$alcohol), color = 'royalblue') +
   geom_vline(xintercept = mean(rw$alcohol), color = 'coral')
+summary(rw$alcohol)
 ```
 
 Here we have another long tail distribution for alcohol percentage by volume. Most of the wines contain about 9.5% alc. The median is <span style="color:royalblue">10.2</span>% and the average is <span style="color:coral">10.42</span>%.
@@ -93,6 +101,8 @@ ggplot(rw, aes(x = chlorides)) +
   geom_histogram() +
   xlim(quantile(rw$chlorides, 0.025), quantile(rw$chlorides, 0.975)) +
   xlab("chlorides (middle 95%)")
+summary(subset(rw$chlorides,
+               rw$chlorides < quantile(rw$chlorides, 0.95)))
 ```
 
 I still don't like that. I'm going to try a transform
@@ -101,6 +111,7 @@ ggplot(rw, aes(x = chlorides)) +
   geom_histogram() +
   scale_x_log10() +
   xlab("log(chlorides)")
+summary(rw$chlorides)
 ```
 
 That looks a lot better. This is probably good to keep in mind.
