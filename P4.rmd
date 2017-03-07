@@ -19,7 +19,7 @@ library(GGally)
 library(RColorBrewer)
 ```
 
-```{r Load_the_Data, echo=TRUE}
+```{r Load_the_Data}
 # Load the Data
 redwine <- read.csv('wineQualityReds.csv')
 
@@ -80,7 +80,26 @@ p9 <- qplot(rw$sulphates)
 grid.arrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, ncol = 3)
 ```
 
-All of these variables seem to be more or less normally distributed, some have long tails, but one seems to stick out. Let's take a closer look at citric acid with a different bin width.
+It looks like there are some overacheivers in the chloride section. Let's just look at the middle 95%.
+
+```{r}
+ggplot(rw, aes(x = chlorides)) +
+  geom_histogram() +
+  xlim(quantile(rw$chlorides, 0.025), quantile(rw$chlorides, 0.975)) +
+  xlab("chlorides (middle 95%)")
+```
+
+I still don't like that. I'm going to try a transform
+```{r}
+ggplot(rw, aes(x = chlorides)) +
+  geom_histogram() +
+  scale_x_log10() +
+  xlab("log(chlorides)")
+```
+
+That looks a lot better. This is probably good to keep in mind.
+
+Now let's take a closer look at that weird looking citric acid with a different bin width.
 
 ```{r}
 qplot(rw$citric.acid, binwidth = 0.01)
@@ -158,6 +177,8 @@ This seems to have a stronger relationship than alcohol and quality, even though
 
 ```{r}
 ggplot(rw, aes(x = residual.sugar, y = quality)) +
+  xlim(0, quantile(rw$residual.sugar, 0.95)) +
+  xlab("residual sugar (bottom 95%") +
   geom_jitter(alpha = 0.15)
 ```
 
