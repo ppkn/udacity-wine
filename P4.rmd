@@ -1,5 +1,11 @@
 Exploration of Red Wine Data by Daniel Pipkin
 ========================================================
+
+I don't drink wine. I know almost nothing about it. That's why I thought it would be a good idea to analyze some data and come up with more questions on what I should learn. This dataset has the physiochemical properties of 1599 red wines of the "Vinho Verde" variety. There was also a rating assigned on a 0-10 scale. I think it will be interesting to see how those physiochemical properties contribute to the overall quality of the wine.
+
+I originally retrieved the data from  https://s3.amazonaws.com/udacity-hosted-downloads/ud651/wineQualityReds.csv and the paper can be found at http://dx.doi.org/10.1016/j.dss.2009.05.016
+
+
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE)
 ```
