@@ -222,17 +222,27 @@ ggplot(rw, aes(x = alcohol, y = quality, color = volatile.acidity)) +
   scale_color_gradient(high = 'red', low = 'blue')
 ```
 
+I tried to make the colors distinct here and I still can't see a clear pattern.
+
+Maybe citric acid and alcohol together can predict quality?
+
 ```{r}
 ggplot(rw, aes(x = alcohol, y = quality, color = citric.acid)) +
   geom_jitter() +
   scale_color_gradient(high = 'red', low = 'blue')
 ```
 
+There is a little bit of a pattern where the dots get redder up and to the right, but it really doesn't look like much of a pattern.
+
+At this point I think picking the two variables with the highest correlation coefficients might reveal something.
+
 ```{r echo=FALSE}
 ggplot(rw, aes(x = alcohol, y = volatile.acidity, color = factor(quality))) +
   geom_jitter() +
   scale_color_brewer()
 ```
+
+Here is a little more of a pattern, but I don't think it adds any more information. We already knew that more alcohol and less volatile acidity made better wine, but at least it shows that those two things don't work against each other.
 
 # Multivariate Analysis
 
